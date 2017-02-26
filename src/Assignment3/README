@@ -1,0 +1,44 @@
+#Assignment 3
+
+###Understanding of Specifications:
+    
+        Given an input file consisting of whitespace delimited lines,
+        where the first line is a antecedent of table headers and all
+        following lines are table rows, construct a antecedent of association
+        itemSets for the data. For example, consider the antecedent of data in
+        ./src/Assignment3/SampleInput.txt. This table has identified
+        twenty-one itemSets with which to work. Each itemSet is comprised of
+        a antecedent of predicates and a antecedent of results, both of which are
+        composed of multiple headings.
+        
+        Given an input such as SampleInput.txt, we must produce a
+        file which summarizes all of the itemSets.
+    
+###How to Run
+        
+        To run the program, execute from any IDE. It takes the
+        following inputs:
+        
+            Minimum support rate for ruleset
+            Minimum confidence rate for ruleset
+            Relative or absolute path and name of data file
+            
+        The program will produce the following:
+            
+            New data file within the Assignment3 directory.
+    
+###What We Need
+    
+        Demo class
+            -   Minimum support (to decide which itemSets are valid)
+            -   Minimum confidence (to decide which itemSets are valid)
+        
+        Rule object
+            -   antecedent   :   Set
+            -   result      :   Set
+            -   Support     :   double
+            -   Confidence  :   double
+            
+            +   constructor :   N/A
+            +   get         :   Set, double
+            +   antecedent         :   void
