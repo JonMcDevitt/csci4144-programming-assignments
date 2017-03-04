@@ -91,10 +91,6 @@ public class ItemSet {
         return antecedent;
     }
 
-    public void setAntecedent(Set<ItemNode> antecedent) {
-        this.antecedent = antecedent;
-    }
-
     boolean containsAntecedent(ItemSet that) {
         List<ItemNode> thisScan = this.antecedent.stream().collect(Collectors.toList());
         List<ItemNode> thatScan = that.antecedent.stream().collect(Collectors.toList());
@@ -116,10 +112,6 @@ public class ItemSet {
 
     double getSupport() {
         return support;
-    }
-
-    public List<ItemNode> toList() {
-        return new ArrayList<>(antecedent);
     }
 
     @Override

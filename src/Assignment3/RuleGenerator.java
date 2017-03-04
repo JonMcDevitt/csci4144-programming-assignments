@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * Created by Owner on 2017-02-25.
  */
-public class RuleProductionDemo {
+public class RuleGenerator {
     public static void main(String[] args) throws IOException {
         String filename, minSupport, minConfidence, line;
         /** Currently want to keep this for rulesets. Refine later  */
@@ -50,8 +50,8 @@ public class RuleProductionDemo {
         }
         /** Check that the data table is being created correctly    */
         for(int i = 0; i < table.get(0).size(); i++) {
-            for(int j = 0; j < table.size(); j++) {
-                System.out.print(table.get(j).get(i) + "\t");
+            for (List<String> aTable : table) {
+                System.out.print(aTable.get(i) + "\t");
             }
             System.out.println();
         }
@@ -84,80 +84,7 @@ public class RuleProductionDemo {
         }
     }
 
-    /** Algorithm
-     *      Consider the above stagedItemSets list. This has the form of
-     *
-     *      A           B           C           D
-     *        AB  AC  AD    BC  BD      CD
-     *           ABC    ABD     ACD     BCD
-     *                  ABCD
-     *
-     *      and so on and so forth for any set of size n, where each of the above rows corresponds to a set of
-     *      ItemSets. Notice also that we can take advantage of a trickle-down algorithm. Thus, our algorithm
-     *      for generating rulesets utilizes this as such:
-     *
-     *          RuleSet RS = new RuleSet();
-     *          for(stagedItemList[k]) {
-     *              for(stagedItemList[k][i]) {
-     *                  ItemSet A = stagedItemList[k][i]
-     *                  for(stagedItemList[k+1]) {
-     *                      foreach(ItemSet S in stagedItemList[k+1]) {
-     *                          if (S.antecedent contains A) {
-     *                              consequent = all non-A members of S.antecedent
-     *                              antecedent = A
-     *                              Rule R = new Rule(antecedent, consequent, table)
-     *
-     *                              if (R.confidence higher than minimum confidence) {
-     *                                  add R to RuleSet RS
-     *                              }
-     *                          }
-     *                      }
-     *                  }
-     *              }
-     *          }
-     *
-     *  @param stagedItemSets   -   List of ItemSets to scan
-     *  @param table            -   Table for creating rules
-     *  @param minConfidence    -   minimum confidence required to be added to the ruleset
-     *
-     *  @return RuleSet
-     *  */
-    private static RuleSet generateRulesets(List<Set<ItemSet>> stagedItemSets, List<List<String>> table, double minConfidence, double minSupport) {
-        RuleSet ret = new RuleSet();
-
-        for(int i = 0; i < stagedItemSets.size() - 1; i++) {
-            for(ItemSet A : stagedItemSets.get(i)) {
-                for(int j = i+1; j < stagedItemSets.size(); j++) {
-                    for(ItemSet S : stagedItemSets.get(j)) {
-                        if(S.containsAntecedent(A)) {
-                            List<ItemNode> consequent = findConsequent(A, S);
-                            Rule r = new Rule(A.getAntecedent().stream().collect(Collectors.toList()), consequent, table);
-                            if(r.getConfidence() >= minConfidence && r.getSupport() >= minSupport) {
-                                ret.add(r);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return ret;
-    }
-
-    /** S is the larger item set, since it is the one from the next level down*/
-    private static List<ItemNode> findConsequent(ItemSet a, ItemSet s) {
-        List<ItemNode> consequent = new ArrayList<>();
-
-        for(ItemNode node : s.getAntecedent()) {
-            if(!containsNode(node, a.getAntecedent().stream().collect(Collectors.toList()))) {
-                consequent.add(node);
-            }
-        }
-
-        return consequent;
-    }
-
-    static boolean containsNode(ItemNode n1, List<ItemNode> s) {
+    private static boolean containsNode(ItemNode n1, List<ItemNode> s) {
         for(ItemNode node : s) {
             if(node.getHeader().equals(n1.getHeader()) &&
                     node.getValue().equals(n1.getValue())) {
@@ -260,5 +187,78 @@ public class RuleProductionDemo {
             }
         }
         return true;
+    }
+
+    /** generateRuleSets Algorithm
+     *      Consider the above stagedItemSets list. This has the form of
+     *
+     *      A           B           C           D
+     *        AB  AC  AD    BC  BD      CD
+     *           ABC    ABD     ACD     BCD
+     *                  ABCD
+     *
+     *      and so on and so forth for any set of size n, where each of the above rows corresponds to a set of
+     *      ItemSets. Notice also that we can take advantage of a trickle-down algorithm. Thus, our algorithm
+     *      for generating rulesets utilizes this as such:
+     *
+     *          RuleSet RS = new RuleSet();
+     *          for(stagedItemList[k]) {
+     *              for(stagedItemList[k][i]) {
+     *                  ItemSet A = stagedItemList[k][i]
+     *                  for(stagedItemList[k+1]) {
+     *                      foreach(ItemSet S in stagedItemList[k+1]) {
+     *                          if (S.antecedent contains A) {
+     *                              consequent = all non-A members of S.antecedent
+     *                              antecedent = A
+     *                              Rule R = new Rule(antecedent, consequent, table)
+     *
+     *                              if (R.confidence higher than minimum confidence) {
+     *                                  add R to RuleSet RS
+     *                              }
+     *                          }
+     *                      }
+     *                  }
+     *              }
+     *          }
+     *
+     *  @param stagedItemSets   -   List of ItemSets to scan
+     *  @param table            -   Table for creating rules
+     *  @param minConfidence    -   minimum confidence required to be added to the ruleset
+     *
+     *  @return RuleSet
+     *  */
+    private static RuleSet generateRulesets(List<Set<ItemSet>> stagedItemSets, List<List<String>> table, double minConfidence, double minSupport) {
+        RuleSet ret = new RuleSet();
+
+        for(int i = 0; i < stagedItemSets.size() - 1; i++) {
+            for(ItemSet A : stagedItemSets.get(i)) {
+                for(int j = i+1; j < stagedItemSets.size(); j++) {
+                    for(ItemSet S : stagedItemSets.get(j)) {
+                        if(S.containsAntecedent(A)) {
+                            List<ItemNode> consequent = findConsequent(A, S);
+                            Rule r = new Rule(A.getAntecedent().stream().collect(Collectors.toList()), consequent, table);
+                            if(r.getConfidence() >= minConfidence && r.getSupport() >= minSupport) {
+                                ret.add(r);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    /** S is the larger item set, since it is the one from the next level down*/
+    private static List<ItemNode> findConsequent(ItemSet a, ItemSet s) {
+        List<ItemNode> consequent = new ArrayList<>();
+
+        for(ItemNode node : s.getAntecedent()) {
+            if(!containsNode(node, a.getAntecedent().stream().collect(Collectors.toList()))) {
+                consequent.add(node);
+            }
+        }
+
+        return consequent;
     }
 }

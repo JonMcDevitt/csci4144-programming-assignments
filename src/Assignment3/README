@@ -2,43 +2,139 @@
 
 ###Understanding of Specifications:
     
-        Given an input file consisting of whitespace delimited lines,
-        where the first line is a antecedent of table headers and all
-        following lines are table rows, construct a antecedent of association
-        itemSets for the data. For example, consider the antecedent of data in
-        ./src/Assignment3/SampleInput.txt. This table has identified
-        twenty-one itemSets with which to work. Each itemSet is comprised of
-        a antecedent of predicates and a antecedent of results, both of which are
-        composed of multiple headings.
-        
-        Given an input such as SampleInput.txt, we must produce a
-        file which summarizes all of the itemSets.
+    Given an input file consisting of whitespace delimited lines,
+    where the first line is a antecedent of table headers and all
+    following lines are table rows, construct a antecedent of association
+    itemSets for the data. For example, consider the antecedent of data in
+    ./src/Assignment3/SampleInput.txt. This table has identified
+    twenty-one itemSets with which to work. Each itemSet is comprised of
+    a antecedent of predicates and a antecedent of results, both of which are
+    composed of multiple headings.
+    
+    Given an input such as SampleInput.txt, we must produce a
+    file which summarizes all of the itemSets.
     
 ###How to Run
         
-        To run the program, execute from any IDE. It takes the
-        following inputs:
-        
-            Minimum support rate for ruleset
-            Minimum confidence rate for ruleset
-            Relative or absolute path and name of data file
-            
-        The program will produce the following:
-            
-            New data file within the Assignment3 directory.
+    To run the program, execute from any IDE. It takes the
+    following inputs:
     
-###What We Need
-    
-        Demo class
-            -   Minimum support (to decide which itemSets are valid)
-            -   Minimum confidence (to decide which itemSets are valid)
+        Minimum support rate for ruleset
+        Minimum confidence rate for ruleset
+        Relative or absolute path and name of data file
         
-        Rule object
-            -   antecedent   :   Set
-            -   result      :   Set
-            -   Support     :   double
-            -   Confidence  :   double
+    The program will produce the following:
+        
+        New data file within the Assignment3 directory.
+    
+###Code Design
+
+    More detailed comments for the more in-depth functions are available in the
+    code. At a high level, the program functions in four main steps:
+    
+        1.  Read input file and receive minimum support and confidence from
+            user, then construct a table from the data
+        2.  Given the table, construct k-item sets to use for rule generation
+        3.  Given a list of k-item sets, generate rules
+        4.  Write output to file.
+        
+    The code accomplishes this from the ground up with the following objects
+    and paradigms:
+    
+        Minify the problem. We want to deal with the problem in its smallest
+        possible parts, so we break common issues into small pieces and address
+        throughout the code where possible.
+        
+        ItemNode class
+            -   Most basic part of the program. Acts as a container for
+                key-value pairs which ItemSets are built from. 
+        ItemSet class
+            -   A set of items with a support value. This is a flexible set of
+                ItemNodes which automatically calculates the support. As the
+                base class for the Rule object, we refer to its ItemNode set as
+                the antecedent, where the consequent will be an aspect of the
+                Rule object
+                
+            Important Functions
+                calcSupport(List<List<String>> table)
+                    As implied by the name, this calculates the support for
+                    this ItemSet given its table. To accomplish this, we
+                    iterate through the columns and scan through them by rows
+                    with the help of a findAntecedentInSet() function. When we
+                    find a value, we add it to a list, which we use to verify
+                    that we have in fact found an instance of our antecedent.
+                    We iterate through this until we have found all instances
+                    of our antecedent, whereupon we find the support by
+                    dividing it by the total number of rows in the table.
+                
+                findAntecedentInSet(Set<ItemNode> set
+                                    List<List<String>> table,
+                                    int row,
+                                    List<ItemNode> list)
+                    Given some set and table, we scan our row and add all
+                    values from the table which exist in the set to the list.
+                    This constructs a list which can be compared to the
+                    antecedent to verify the ItemSet's support.
+                    
+                containsAntecedent(ItemSet that)
+                    Simply checks that the ItemSet parameter contains our
+                    antecedent.
+        Rule class
+            -   An extension of the ItemSet class which has a consequent in
+                addition to an antecedent. Also contains the confidence
+                associated with the rule.
             
-            +   constructor :   N/A
-            +   get         :   Set, double
-            +   antecedent         :   void
+            Important Functions
+                calcRuleSupport
+                    Much the same as in ItemSet, but calculates the support for
+                    the consequent and antecedent rather than only the latter
+                calcConfidence
+                    Calculates the confidence with a similar algorithm to
+                    calcSupport and calcRuleSupport
+        RuleSet class
+            -   Simply a list with which to contain the set of rules
+            
+        RuleGenerator class
+            -   Main demo class, used to run the program. The demo program
+                falls into the same steps as what were elaborated upon above.
+                It also contains some relatively useful functions (elaborated
+                upon below), and does much of the work on its own for
+                generating rule sets with string values
+            
+            Important Functions
+                findOneItemSets(List<List<String>> table, double minSupport)
+                    Given a table, generates a set of one-item sets
+                findK_ItemSets( List<List<String>> table,
+                                Set<ItemSet> prevSet,
+                                double minSupport)
+                    Given a table, minimum support rate, and a set of
+                    previously generated values, constructs a list of k-item
+                    sets. To do this, we split between two alternatives:
+                        1.  prevSet is one-item set. Simply do a join operation
+                            and add a new ItemSet with the resulting ItemNode
+                            to the list we are generating
+                        2.  prevSet is k-item set and must therefore be 
+                            trimmed. Trim by capturing all but the last of the
+                            antecedent values for values alpha and beta - the
+                            'root' ItemSet being inspected and the 'travelling'
+                            ItemSet being inspected - and comparing the two.
+                            Do the same for the last values of alpha and beta.
+                            If the alphaSublist and betaSublists match but the
+                            last values do not, then it is a candidate for
+                            addition to the current set of item sets. If its
+                            support rate is compatible, then we add it to the
+                            newAntecedent ItemNode list and construct a new
+                            ItemSet from it, which we add to the list we are
+                            generating.
+                generateRulesets(   List<Set<ItemSet>> stagedItemSets,
+                                    List<List<String>> table,
+                                    double minConfidence,
+                                    double minSupport)
+                    Uses a trickle-down look-ahead algorithm. Starting from the
+                    one-item sets, look ahead at all k-item sets which flow
+                    down the tree from our current k-item set. With these lists
+                    we construct rules based on the algorithm discussed in the
+                    RuleGenerator class. We use a findConsequent helper to help
+                    determine which values are meant to be the consequent vs.
+                    the antecedent of the new Rule. We then add the new rule to
+                    our ruleset.

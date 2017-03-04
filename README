@@ -18,8 +18,8 @@
     
     How to Run
         
-        To run the program, execute from any IDE. It takes the
-        following inputs:
+        To run the program, execute from any IDE or run from command line with
+        "java RuleGenerator". It takes the following inputs:
         
             Minimum support rate for ruleset
             Minimum confidence rate for ruleset
@@ -29,18 +29,4 @@
             
             New data file within the Assignment3 directory.
     
-    What We Need
-    
-        Demo class
-            -   Minimum support (to decide which itemSets are valid)
-            -   Minimum confidence (to decide which itemSets are valid)
-        
-        Rule object
-            -   antecedent  :   Set
-            -   result      :   Set
-            -   Support     :   Double
-            -   Confidence  :   Double
-            
-            +   constructor :   N/A
-            +   get         :   Set, Double
-            +   antecedent         :   void
+    Code Design

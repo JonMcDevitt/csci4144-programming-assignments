@@ -1,7 +1,6 @@
 package Assignment3;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,6 +11,7 @@ import java.util.stream.Collectors;
 public class Rule extends ItemSet {
     private Set<ItemNode> consequent;
     private double confidence;
+    private double ruleSupport;
 
     /**
      * constructor
@@ -32,10 +32,11 @@ public class Rule extends ItemSet {
             }
         });
         this.consequent = consequent.stream().collect(Collectors.toSet());
+        this.ruleSupport = calcRuleSupport(table);
         this.confidence = calcConfidence(table);
     }
 
-    private double calcSupport(List<List<String>> table) {
+    private double calcRuleSupport(List<List<String>> table) {
         /** Find support of X->Y    */
         List<ItemNode> fullExpression = new ArrayList<>(this.getAntecedent().stream().collect(Collectors.toList()));
         fullExpression.addAll(consequent.stream().collect(Collectors.toList()));
@@ -54,8 +55,7 @@ public class Rule extends ItemSet {
             }
         }
 
-        double support = (double)bothOccur/(double)(table.get(0).size()-1);
-        return support / super.getSupport();
+        return (double)bothOccur/(double)(table.get(0).size()-1);
     }
 
     private double calcConfidence(List<List<String>> table) {
@@ -77,16 +77,12 @@ public class Rule extends ItemSet {
         return (double) bothOccur / (double) xOccur;
     }
 
-    public double getConfidence() {
+    double getConfidence() {
         return confidence;
     }
 
-    public Set<ItemNode> getConsequent() {
-        return consequent;
-    }
-
-    public void setConsequent(Set<ItemNode> consequent) {
-        this.consequent = consequent;
+    double getRuleSupport() {
+        return ruleSupport;
     }
 
     @Override
