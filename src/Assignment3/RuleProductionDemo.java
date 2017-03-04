@@ -1,8 +1,11 @@
 package Assignment3;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Array;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -53,17 +56,115 @@ public class RuleProductionDemo {
             System.out.println();
         }
 
+        /** Generate item sets  */
         List<ItemSet> temp = new ArrayList<>(0);
         Set<ItemSet> kItemSets = temp.stream().collect(Collectors.toSet());
         Set<ItemSet> oneItemSets = findOneItemSets(table, Double.parseDouble(minSupport));
         Set<ItemSet> prev = oneItemSets;
+        List<Set<ItemSet>> stagedItemSets = new ArrayList<>();
+        stagedItemSets.add(oneItemSets);
         for(int k = 2; k <= table.size() && prev.size() > 0; k++) {
             prev = findK_ItemSets(table, prev, Double.parseDouble(minSupport));
-            kItemSets.addAll(prev);
+            if(prev.size() > 0) {
+                stagedItemSets.add(prev);
+                kItemSets.addAll(prev);
+            }
         }
-//        System.out.println(kItemSets);
 
+        /** Generate rulesets   */
+        RuleSet ruleSet = generateRulesets(stagedItemSets, table, Double.parseDouble(minConfidence), Double.parseDouble(minSupport));
 
+        try(Writer writer = new BufferedWriter(
+                new OutputStreamWriter(
+                        new FileOutputStream("Rules.txt"),
+                        "utf-8"
+                )
+        )) {
+            writer.write(ruleSet.toString());
+        }
+    }
+
+    /** Algorithm
+     *      Consider the above stagedItemSets list. This has the form of
+     *
+     *      A           B           C           D
+     *        AB  AC  AD    BC  BD      CD
+     *           ABC    ABD     ACD     BCD
+     *                  ABCD
+     *
+     *      and so on and so forth for any set of size n, where each of the above rows corresponds to a set of
+     *      ItemSets. Notice also that we can take advantage of a trickle-down algorithm. Thus, our algorithm
+     *      for generating rulesets utilizes this as such:
+     *
+     *          RuleSet RS = new RuleSet();
+     *          for(stagedItemList[k]) {
+     *              for(stagedItemList[k][i]) {
+     *                  ItemSet A = stagedItemList[k][i]
+     *                  for(stagedItemList[k+1]) {
+     *                      foreach(ItemSet S in stagedItemList[k+1]) {
+     *                          if (S.antecedent contains A) {
+     *                              consequent = all non-A members of S.antecedent
+     *                              antecedent = A
+     *                              Rule R = new Rule(antecedent, consequent, table)
+     *
+     *                              if (R.confidence higher than minimum confidence) {
+     *                                  add R to RuleSet RS
+     *                              }
+     *                          }
+     *                      }
+     *                  }
+     *              }
+     *          }
+     *
+     *  @param stagedItemSets   -   List of ItemSets to scan
+     *  @param table            -   Table for creating rules
+     *  @param minConfidence    -   minimum confidence required to be added to the ruleset
+     *
+     *  @return RuleSet
+     *  */
+    private static RuleSet generateRulesets(List<Set<ItemSet>> stagedItemSets, List<List<String>> table, double minConfidence, double minSupport) {
+        RuleSet ret = new RuleSet();
+
+        for(int i = 0; i < stagedItemSets.size() - 1; i++) {
+            for(ItemSet A : stagedItemSets.get(i)) {
+                for(int j = i+1; j < stagedItemSets.size(); j++) {
+                    for(ItemSet S : stagedItemSets.get(j)) {
+                        if(S.containsAntecedent(A)) {
+                            List<ItemNode> consequent = findConsequent(A, S);
+                            Rule r = new Rule(A.getAntecedent().stream().collect(Collectors.toList()), consequent, table);
+                            if(r.getConfidence() >= minConfidence && r.getSupport() >= minSupport) {
+                                ret.add(r);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    /** S is the larger item set, since it is the one from the next level down*/
+    private static List<ItemNode> findConsequent(ItemSet a, ItemSet s) {
+        List<ItemNode> consequent = new ArrayList<>();
+
+        for(ItemNode node : s.getAntecedent()) {
+            if(!containsNode(node, a.getAntecedent().stream().collect(Collectors.toList()))) {
+                consequent.add(node);
+            }
+        }
+
+        return consequent;
+    }
+
+    static boolean containsNode(ItemNode n1, List<ItemNode> s) {
+        for(ItemNode node : s) {
+            if(node.getHeader().equals(n1.getHeader()) &&
+                    node.getValue().equals(n1.getValue())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Set<ItemSet> findOneItemSets(List<List<String>> table, double minSupport) {

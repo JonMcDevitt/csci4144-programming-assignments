@@ -21,7 +21,7 @@ public class ItemSet {
      *  @param  antecedent     -   The list of strings which are antecedent candidates
      *  @param  table   -   The list-of-lists which acts as our view of the table.
      *  */
-    public ItemSet(List<ItemNode> antecedent, List<List<String>> table) {
+    ItemSet(List<ItemNode> antecedent, List<List<String>> table) {
         antecedent.sort((o1, o2) -> {
             if(o1.getHeader().equals(o2.getHeader())) {
                 return o1.getHeader().compareTo(o2.getHeader());
@@ -74,11 +74,11 @@ public class ItemSet {
      *
      *  @return void    -   Since we are modifying the above list, we do not need to return.
      *  */
-    protected void findAntecedentInSet(Set<ItemNode> set, List<List<String>> table, int row, List<ItemNode> list) {
+    void findAntecedentInSet(Set<ItemNode> set, List<List<String>> table, int row, List<ItemNode> list) {
         /** If we are scanning a set of size one, then we are dealing with a one-item set.*/
 
-        for (List<String> aTable : table) {
-            String colName = aTable.get(0), cell = aTable.get(row);
+        for (List<String> col : table) {
+            String colName = col.get(0), cell = col.get(row);
             for (ItemNode n : set) {
                 if (n.getValue().equals(cell)) {
                     list.add(new ItemNode(colName, cell));
@@ -87,12 +87,34 @@ public class ItemSet {
         }
     }
 
-    public Set<ItemNode> getAntecedent() {
+    Set<ItemNode> getAntecedent() {
         return antecedent;
     }
 
+    public void setAntecedent(Set<ItemNode> antecedent) {
+        this.antecedent = antecedent;
+    }
 
-    public double getSupport() {
+    boolean containsAntecedent(ItemSet that) {
+        List<ItemNode> thisScan = this.antecedent.stream().collect(Collectors.toList());
+        List<ItemNode> thatScan = that.antecedent.stream().collect(Collectors.toList());
+
+        /** For a whole antecedent to be present in 'this', all members of 'that' must be present in 'this' antecedent
+         *  */
+        int antecedentValsPresent = 0;
+        for(int i = 0; i < thatScan.size(); i++) {
+            for(int j = 0; j < thisScan.size(); j++) {
+                if(thatScan.get(i).equals(thisScan.get(j))) {
+                    antecedentValsPresent++;
+                }
+            }
+        }
+        return antecedentValsPresent == thatScan.size();
+    }
+
+
+
+    double getSupport() {
         return support;
     }
 
