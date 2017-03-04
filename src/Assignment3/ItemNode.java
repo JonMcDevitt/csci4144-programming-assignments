@@ -28,6 +28,10 @@ public class ItemNode {
         this.value = value;
     }
 
+    public boolean equals(ItemNode n) {
+        return header.compareTo(n.getHeader()) == 0 && value.compareTo(n.getValue()) == 0;
+    }
+
     @Override
     public String toString() {
         return header + " = " + value;

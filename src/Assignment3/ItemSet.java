@@ -22,6 +22,13 @@ public class ItemSet {
      *  @param  table   -   The list-of-lists which acts as our view of the table.
      *  */
     public ItemSet(List<ItemNode> antecedent, List<List<String>> table) {
+        antecedent.sort((o1, o2) -> {
+            if(o1.getHeader().equals(o2.getHeader())) {
+                return o1.getHeader().compareTo(o2.getHeader());
+            } else {
+                return o1.getValue().compareTo(o2.getValue());
+            }
+        });
         this.antecedent = antecedent.stream().collect(Collectors.toSet());
         this.support = calcSupport(table);
     }
@@ -44,7 +51,7 @@ public class ItemSet {
         int bothOccur = 0;
         for(int row = 1; row < table.get(0).size(); row++) {
             List<ItemNode> setVals = new ArrayList<>();
-            findCellInSet(antecedent, table, row, setVals);
+            findAntecedentInSet(antecedent, table, row, setVals);
             /** Row contains the antecedent  */
             if(setVals.size() == antecedent.size()) {
                 bothOccur++;
@@ -56,7 +63,7 @@ public class ItemSet {
 
 
     /**
-     *  function findCellInSet()
+     *  function findAntecedentInSet()
      *
      *  Given a antecedent and table, scan a row and add values into the list if the hashcodes match.
      *
@@ -67,11 +74,13 @@ public class ItemSet {
      *
      *  @return void    -   Since we are modifying the above list, we do not need to return.
      *  */
-    protected void findCellInSet(Set<ItemNode> set, List<List<String>> table, int row, List<ItemNode> list) {
-        for(int col = 0; col < table.size(); col++) {
-            String colName = table.get(col).get(0), cell = table.get(col).get(row);
-            for(ItemNode n : set) {
-                if(n.getValue().equals(cell)) {
+    protected void findAntecedentInSet(Set<ItemNode> set, List<List<String>> table, int row, List<ItemNode> list) {
+        /** If we are scanning a set of size one, then we are dealing with a one-item set.*/
+
+        for (List<String> aTable : table) {
+            String colName = aTable.get(0), cell = aTable.get(row);
+            for (ItemNode n : set) {
+                if (n.getValue().equals(cell)) {
                     list.add(new ItemNode(colName, cell));
                 }
             }
@@ -85,6 +94,10 @@ public class ItemSet {
 
     public double getSupport() {
         return support;
+    }
+
+    public List<ItemNode> toList() {
+        return new ArrayList<>(antecedent);
     }
 
     @Override

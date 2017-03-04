@@ -2,10 +2,8 @@ package Assignment3;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Set;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -15,7 +13,6 @@ public class RuleProductionDemo {
     public static void main(String[] args) throws IOException {
         String filename, minSupport, minConfidence, line;
         /** Currently want to keep this for rulesets. Refine later  */
-        String[] headers;
         Scanner in = new Scanner(System.in);
         System.out.print("Please enter the file you would like to scan from: ");
         filename = in.nextLine();
@@ -37,11 +34,9 @@ public class RuleProductionDemo {
 
             if (lineNum == 0) {
                 /** Header line. Add headers to the header list. This will define the columns of the table. */
-                headers = new String[tokens.length];
                 for (int i = 0; i < tokens.length; i++) {
-                    headers[i] = tokens[i];
                     table.add(new ArrayList<>());
-                    table.get(i).add(headers[i]);
+                    table.get(i).add(tokens[i]);
                 }
             } else {
                 /** Data row. Add values to each column.    */
@@ -58,7 +53,17 @@ public class RuleProductionDemo {
             System.out.println();
         }
 
+        List<ItemSet> temp = new ArrayList<>(0);
+        Set<ItemSet> kItemSets = temp.stream().collect(Collectors.toSet());
         Set<ItemSet> oneItemSets = findOneItemSets(table, Double.parseDouble(minSupport));
+        Set<ItemSet> prev = oneItemSets;
+        for(int k = 2; k <= table.size() && prev.size() > 0; k++) {
+            prev = findK_ItemSets(table, prev, Double.parseDouble(minSupport));
+            kItemSets.addAll(prev);
+        }
+//        System.out.println(kItemSets);
+
+
     }
 
     private static Set<ItemSet> findOneItemSets(List<List<String>> table, double minSupport) {
@@ -67,7 +72,7 @@ public class RuleProductionDemo {
         for(int col = 0; col < table.size(); col++) {
             String colName = table.get(col).get(0);
             List<String> colVals = new ArrayList<>();
-            for(int row = 0; row < table.get(col).size(); row++) {
+            for(int row = 1; row < table.get(col).size(); row++) {
                 String val = table.get(col).get(row);
                 if(!colVals.contains(val)) {
                     colVals.add(val);
@@ -77,40 +82,82 @@ public class RuleProductionDemo {
                         itemSets.add(itemSet);
                     }
                 }
+                preds.clear();
             }
         }
         return itemSets.stream().collect(Collectors.toSet());
     }
 
-    private static Set<ItemSet> findNumItemSets(int k, Set<ItemSet> freqSet, List<List<String>> table) {
-        if(k > table.size()) {
-            return freqSet;
+    private static Set<ItemSet> findK_ItemSets(List<List<String>> table, Set<ItemSet> prevSet, double minSupport) {
+        Object prevObj = prevSet.toArray()[0];
+        ItemSet s;
+        int prevSize = 0;
+        try {
+            s = (ItemSet)prevObj;
+            prevSize = s.getAntecedent().size();
+        } catch (Exception e) {
+            System.err.println("Item (s) is not an ItemSet");
         }
-        List<ItemSet> vals = new ArrayList<>();
-        vals.addAll(freqSet);
-        for(ItemSet toAdd : freqSet) {
-            List<ItemSet> add = new ArrayList<>();
-            for(ItemSet set : freqSet) {
-                /** If our current set does not have this header in it already, add to the set  */
-                boolean hasHeader;
-                for(ItemNode node : toAdd.getAntecedent()) {
+        List<ItemSet> retList = new ArrayList<>();
+        if(prevSize > 0 && prevSize < table.size()) {
+            List<ItemSet> prevList = new ArrayList<>(prevSet);
+            for(int i = 0; i < prevList.size(); i++) {
+                List<ItemNode> newAntecedent;
+                ItemSet alpha = prevList.get(i), beta;
+                for(int j = i+1; j < prevList.size(); j++) {
+                    /** Find new antecedent */
+                    beta = prevList.get(j);
+                    /** If more than one itemNode in the antecedent, then join based on set-by-set comparison */
+                    if(alpha.getAntecedent().size() > 1) {
+                        /** Step 1: grab the antecedents of the itemset. Gratitude to Raphael for mentioning that
+                         *          the last element of two itemsets is sufficient if all of their predecessors are
+                         *          equal to one another.
+                         *  */
+                        List<ItemNode> alphaAntecedent = alpha.getAntecedent().stream().collect(Collectors.toList());
+                        List<ItemNode> betaAntecedent = beta.getAntecedent().stream().collect(Collectors.toList());
+                        List<ItemNode> alphaSublist = alphaAntecedent.subList(0, alphaAntecedent.size()-2);
+                        List<ItemNode> betaSublist = betaAntecedent.subList(0, betaAntecedent.size()-2);
 
+                        /** Step 2: Check that the prefixes and final ItemNodes for the antecedents match. If they
+                         *          do, then we can perform a join.
+                         *  */
+                        if(equals(alphaSublist, betaSublist) &&
+                                alphaAntecedent.get(alphaAntecedent.size()-1).equals(betaAntecedent.get(betaAntecedent.size()-1)))
+                        {
+                            List<ItemNode> temp = new ArrayList<>(alphaAntecedent);
+                            for(ItemNode b : betaAntecedent) {
+                                if(!temp.contains(b)) {
+                                    temp.add(b);
+                                }
+                            }
+                            ItemSet newSet = new ItemSet(temp, table);
+
+                            if(newSet.getSupport() >= minSupport) {
+                                retList.add(newSet);
+                            }
+                        }
+                    } else {
+                        /** If only one member of the antecedent, then can simply join*/
+                        newAntecedent = new ArrayList<>();
+                        newAntecedent.add(alpha.getAntecedent().stream().collect(Collectors.toList()).get(0));
+                        newAntecedent.add(beta.getAntecedent().stream().collect(Collectors.toList()).get(0));
+                        ItemSet newItemSet = new ItemSet(newAntecedent, table);
+                        if(newItemSet.getSupport() >= minSupport) {
+                            retList.add(newItemSet);
+                        }
+                    }
                 }
             }
         }
+        return retList.stream().collect(Collectors.toSet());
     }
 
-    private static boolean checkIfHeaderRepeats(ItemSet set1, ItemSet set2) {
-        boolean repeats = false;
-        List<String> headers = new ArrayList<>();
-        List<ItemNode> set = new ArrayList<>();
-        for(ItemNode n1 : set1.getAntecedent()) {
-            for(ItemNode n2 : set2.getAntecedent()){
-                if(!n1.getHeader().equals(n2.getHeader()) && !headers.contains(n1.getHeader())) {
-                    headers.add(n1.getHeader());
-                    set.add(new ItemNode(n1.getHeader(), n1.getValue()));
-                }
+    private static boolean equals(List<ItemNode> alphaSublist, List<ItemNode> betaSublist) {
+        for(int i = 0; i < alphaSublist.size(); i++) {
+            if(!alphaSublist.get(i).equals(betaSublist.get(i))) {
+                return false;
             }
         }
+        return true;
     }
 }

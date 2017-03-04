@@ -32,12 +32,12 @@ public class Rule extends ItemSet {
         int xOccur = 0, bothOccur=0;
         for(int row = 1; row < table.get(0).size(); row++) {
             List<ItemNode> predVals = new ArrayList<>();
-            findCellInSet(this.getAntecedent(), table, row, predVals);
+            findAntecedentInSet(this.getAntecedent(), table, row, predVals);
             /** Row contains the predicate  */
             if(predVals.size() == this.getAntecedent().size()) {
                 xOccur++;
                 List<ItemNode> resultVals = new ArrayList<>();
-                findCellInSet(consequent, table, row, resultVals);
+                findAntecedentInSet(consequent, table, row, resultVals);
                 if(resultVals.size() == consequent.size()) {
                     bothOccur++;
                 }

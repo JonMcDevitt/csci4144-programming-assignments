@@ -36,7 +36,7 @@
             -   Minimum confidence (to decide which itemSets are valid)
         
         Rule object
-            -   antecedent   :   Set
+            -   antecedent  :   Set
             -   result      :   Set
             -   Support     :   Double
             -   Confidence  :   Double
