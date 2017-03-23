@@ -1,0 +1,18 @@
+
+
+#Asignment 4
+
+###Algorithm
+    Src: https://en.wikipedia.org/wiki/ID3_algorithm#Algorithm
+    
+    
+    
+### Required Classes
+
+-   DTNode
+    -   Stores the column header
+    -   References a parent DTEdge
+    -   References a set of child DTEdges
+-   DTEdge
+    -   Stores a value from the parent DTNode
+    -   References parent DTNode and child DTNode

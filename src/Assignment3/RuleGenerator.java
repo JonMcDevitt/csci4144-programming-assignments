@@ -9,6 +9,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static FileReader.FileReader.readTableFile;
+
 /**
  * Created by Owner on 2017-02-25.
  */
@@ -25,29 +27,7 @@ public class RuleGenerator {
         minConfidence = in.nextLine();
 
         System.out.println("Scanning files...");
-        List<List<String>> table = new ArrayList<>();
-        in = new Scanner(new File(filename));
-        int lineNum = -1;
-
-        /** Process file. Create facsimile for table as a set of ArrayLists*/
-        while(in.hasNext()) {
-            lineNum++;
-            line = in.nextLine();
-            String[] tokens = line.split("\\s+|\\t+");
-
-            if (lineNum == 0) {
-                /** Header line. Add headers to the header list. This will define the columns of the table. */
-                for (int i = 0; i < tokens.length; i++) {
-                    table.add(new ArrayList<>());
-                    table.get(i).add(tokens[i]);
-                }
-            } else {
-                /** Data row. Add values to each column.    */
-                for (int i = 0; i < table.size(); i++) {
-                    table.get(i).add(tokens[i]);
-                }
-            }
-        }
+        List<List<String>> table = readTableFile(filename);
         /** Check that the data table is being created correctly    */
         for(int i = 0; i < table.get(0).size(); i++) {
             for (List<String> aTable : table) {
